@@ -67,6 +67,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
     // encodings in ros: http://docs.ros.org/diamondback/api/sensor_msgs/html/image__encodings_8cpp_source.html
     //color has encoding RGB8
     cv_bridge::CvImageConstPtr ptr;
+    cv::Mat ret_img; 
     if (color_msg->encoding == "8UC1")//shan:why 8UC1 need this operation? Find answer:https://github.com/ros-perception/vision_opencv/issues/175
     {
         sensor_msgs::Image img;
@@ -78,9 +79,24 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
         img.data = color_msg->data;
         img.encoding = "mono8";
         ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8);
+        ret_img = ptr->image; 
+    } else if(color_msg->encoding == "8UC3"){
+        sensor_msgs::Image img;
+        img.header = color_msg->header;
+        img.height = color_msg->height;
+        img.width = color_msg->width;
+        img.is_bigendian = color_msg->is_bigendian;
+        img.step = color_msg->step;
+        img.data = color_msg->data;
+        img.encoding = "bgr8";
+        ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
+        ret_img = ptr->image.clone(); 
+        cv::cvtColor(ret_img, ret_img, cv::COLOR_BGR2GRAY);
     }
-    else
+    else{
         ptr = cv_bridge::toCvCopy(color_msg, sensor_msgs::image_encodings::MONO8);
+        ret_img = ptr->image; 
+    }
 
     //depth has encoding TYPE_16UC1
     cv_bridge::CvImageConstPtr depth_ptr;
@@ -98,7 +114,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
     }
 
 
-    cv::Mat show_img = ptr->image;
+    cv::Mat show_img = ret_img; //ptr->image;
     TicToc t_r;
     // init pts here, using readImage()
 
@@ -108,18 +124,20 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
         if (i != 1 || !STEREO_TRACK)
         {
 
-            trackerData[i].readImage(ptr->image.rowRange(ROW * i, ROW * (i + 1)), depth_ptr->image.rowRange(ROW * i, ROW * (i + 1)), color_msg->header.stamp.toSec());
+            // trackerData[i].readImage(ptr->image.rowRange(ROW * i, ROW * (i + 1)), depth_ptr->image.rowRange(ROW * i, ROW * (i + 1)), color_msg->header.stamp.toSec());
+            trackerData[i].readImage(ret_img, depth_ptr->image.rowRange(ROW * i, ROW * (i + 1)), color_msg->header.stamp.toSec()); 
         }
         else
         {
             if (EQUALIZE)
             {
                 cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
-                clahe->apply(ptr->image.rowRange(ROW * i, ROW * (i + 1)), trackerData[i].cur_img);
+                // clahe->apply(ptr->image.rowRange(ROW * i, ROW * (i + 1)), trackerData[i].cur_img);
+                clahe->apply(ret_img, trackerData[i].cur_img);
             }
             else
             {
-                trackerData[i].cur_img = ptr->image.rowRange(ROW * i, ROW * (i + 1));
+                trackerData[i].cur_img = ret_img; //ptr->image.rowRange(ROW * i, ROW * (i + 1));
                 trackerData[i].cur_depth = depth_ptr->image.rowRange(ROW * i, ROW * (i + 1));
             }
 
@@ -142,7 +160,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
     }
     if (PUB_THIS_FRAME)
     {
-        //vector<int> test;
+        // vector<int> test;
         cv::Mat show_depth = depth_ptr->image;
         pub_count++;
         //http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud.html
@@ -188,16 +206,17 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
                     //nearest neighbor....fastest  may be changed
                     // show_depth: 480*640   y:[0,480]   x:[0,640]
                     depth_of_point.values.push_back((int)show_depth.at<unsigned short>(round(cur_pts[j].y), round(cur_pts[j].x)));
+                    // depth_of_point.values.push_back(0.001*show_depth.at<unsigned short>(round(cur_pts[j].y), round(cur_pts[j].x)));
                     //debug use: print depth pixels
-                    //test.push_back((int)show_depth.at<unsigned short>(round(cur_pts[j].y),round(cur_pts[j].x)));
+                   //  test.push_back((int)show_depth.at<unsigned short>(round(cur_pts[j].y),round(cur_pts[j].x)));
                 }
             }
         }
         //debug use: print depth pixels
-        //for (int iii = test.size() - 1; iii >= 0; iii--)
-        //{
-        //    std::cout << test[iii] << " ";
-        //}
+        // for (int iii = test.size() - 1; iii >= 0; iii--)
+        // {
+        //     std::cout << test[iii] << " ";
+        // }
         //std::cout << std::endl;
         feature_points->channels.push_back(id_of_point);
         feature_points->channels.push_back(u_of_point);

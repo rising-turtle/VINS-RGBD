@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
     nav_msgs
     tf
-    cv_bridge
+    cv_bridge 
     )
 
 find_package(OpenCV REQUIRED)
@@ -32,12 +32,9 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
 )
-
 catkin_package()
 
-add_executable(vins_estimator
-    src/estimator_node.cpp
-    src/parameters.cpp
+add_library(vins_rgbd SHARED src/parameters.cpp
     src/estimator.cpp
     src/feature_manager.cpp
     src/factor/pose_local_parameterization.cpp
@@ -50,10 +47,15 @@ add_executable(vins_estimator
     src/initial/solve_5pts.cpp
     src/initial/initial_aligment.cpp
     src/initial/initial_sfm.cpp
-    src/initial/initial_ex_rotation.cpp
-    )
+    src/initial/initial_ex_rotation.cpp)
 
+target_link_libraries(vins_rgbd ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES} ) # /usr/local/lib/libSophus.so
 
-target_link_libraries(vins_estimator ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES} ) # /usr/local/lib/libSophus.so
+add_executable(vins_estimator src/estimator_node.cpp)
 
+target_link_libraries(vins_estimator vins_rgbd) # /usr/local/lib/libSophus.so
+
+add_executable(vins_estimator_ss src/estimator_node_ss.cpp) # node to handle structure core's data 
+
+target_link_libraries(vins_estimator_ss vins_rgbd)
 
