@@ -256,9 +256,9 @@ void process()
                     ROS_ASSERT(dt_1 + dt_2 > 0);
                     double w1 = dt_2 / (dt_1 + dt_2);
                     double w2 = dt_1 / (dt_1 + dt_2);
-                    dx = w1 * dx + w2 * imu_msg->linear_acceleration.x;
-                    dy = w1 * dy + w2 * imu_msg->linear_acceleration.y;
-                    dz = w1 * dz + w2 * imu_msg->linear_acceleration.z;
+                    dx = w1 * dx + w2 * imu_msg->linear_acceleration.x*nG;
+                    dy = w1 * dy + w2 * imu_msg->linear_acceleration.y*nG;
+                    dz = w1 * dz + w2 * imu_msg->linear_acceleration.z*nG;
                     rx = w1 * rx + w2 * imu_msg->angular_velocity.x;
                     ry = w1 * ry + w2 * imu_msg->angular_velocity.y;
                     rz = w1 * rz + w2 * imu_msg->angular_velocity.z;
@@ -353,7 +353,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "vins_estimator");
     ros::NodeHandle n("~");
-    ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
+    ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug); // Info
     readParameters(n);
     estimator.setParameter();
 #ifdef EIGEN_DONT_PARALLELIZE

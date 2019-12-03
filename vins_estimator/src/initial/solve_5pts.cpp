@@ -250,7 +250,9 @@ bool MotionEstimator::solveRelativeRT_PNP(const vector<pair<Vector3d, Vector3d>>
     cv::Mat rvec,tvec,inliersArr;
     cv::Mat cameraMatrix = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
 
-    cv::solvePnPRansac(lll, rr, cameraMatrix, cv::Mat(), rvec, tvec, false, 100, 1.0/460, 0.99,
+    // cv::solvePnPRansac(lll, rr, cameraMatrix, cv::Mat(), rvec, tvec, false, 100, 1.0/460, 0.99,
+    //                   inliersArr, cv::SOLVEPNP_ITERATIVE);//maybe don't need 100times
+    cv::solvePnPRansac(lll, rr, cameraMatrix, cv::Mat(), rvec, tvec, false, 24, 3.0/460, 0.99,
                        inliersArr, cv::SOLVEPNP_ITERATIVE);//maybe don't need 100times
 
 
