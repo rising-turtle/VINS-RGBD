@@ -1,3 +1,9 @@
+To run VINS-RGBD using structure core's data by: 
+
+enter the foloder: vins_estimator/launch  
+roslaunch struct_core.launch
+
+
 ## RGBD-Inertial Trajectory Estimation and Mapping for Small Ground Rescue Robot
 Based one open source SLAM framework [VINS-Mono](https://github.com/HKUST-Aerial-Robotics/VINS-Mono).
 
