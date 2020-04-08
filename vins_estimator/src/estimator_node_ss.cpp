@@ -362,7 +362,9 @@ int main(int argc, char **argv)
     ROS_WARN("waiting for image and imu...");
 
     registerPub(n);
-    nG = G.z(); 
+
+    n.param("g_scale", nG, nG);
+    ROS_DEBUG("estimator_node_ss: g g_scale: %lf", nG);
 
     ros::Subscriber sub_imu = n.subscribe(IMU_TOPIC, 2000, imu_callback, ros::TransportHints().tcpNoDelay());
     ros::Subscriber sub_image = n.subscribe("/feature_tracker/feature", 2000, feature_callback);
