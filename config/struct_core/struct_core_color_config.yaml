@@ -9,7 +9,7 @@ depth_topic: "/cam0/depth"
 # depth_topic: "/cam0/depth"
 # imu_topic: "/imu0"
 
-output_path: "/home/hzhang8/work/result"
+output_path: "/home/davidz/work/result"
 
 #pointcloud settings
 pcl_dist: 10
@@ -77,8 +77,8 @@ keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
 
 #imu parameters       The more accurate parameters you provide, the better performance
 #for handheld, wheeld
-acc_n: 0.1          # accelerometer measurement noise standard deviation. #0.2
-gyr_n: 0.01         # gyroscope measurement noise standard deviation.     #0.05
+acc_n: 0.3 # 0.1          # accelerometer measurement noise standard deviation. #0.2
+gyr_n: 0.02 # 0.02 #0.01         # gyroscope measurement noise standard deviation.     #0.05
 acc_w: 0.001 #0.0002         # accelerometer bias random work noise standard deviation.  #0.02
 gyr_w: 0.0001 #2.0e-5       # gyroscope bias random work noise standard deviation.     #4.0e-5
 

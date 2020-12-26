@@ -1,0 +1,22 @@
+<launch>
+
+  <!-- remember to change focal F from 460 to 230 in parameters.h -->
+
+    <arg name="config_path" default = "$(find feature_tracker)/../config/ds435/ds435_color_config.yaml" />
+    <arg name="depth_config_path" default = "$(find feature_tracker)/../config/ds435/ds435_depth_config.yaml" />
+    <arg name="vins_path" default = "$(find feature_tracker)/../config/../" />
+
+   <include file="vins_rviz.launch"/>
+
+    <node name="feature_tracker" pkg="feature_tracker" type="feature_tracker" output="log">
+        <param name="config_file" type="string" value="$(arg config_path)" />
+        <param name="depth_config_file" type="string" value="$(arg depth_config_path)" />
+        <param name="vins_folder" type="string" value="$(arg vins_path)" />
+    </node>
+
+    <node name="vins_estimator" pkg="vins_estimator" type="vins_estimator" output="screen">
+       <param name="config_file" type="string" value="$(arg config_path)" />
+       <param name="vins_folder" type="string" value="$(arg vins_path)" />
+    </node>
+
+</launch>
