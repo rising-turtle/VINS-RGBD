@@ -95,12 +95,13 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
     }
     else{
         ptr = cv_bridge::toCvCopy(color_msg, sensor_msgs::image_encodings::MONO8);
-        ret_img = ptr->image; 
+        ret_img = ptr->image.clone(); 
     }
 
     //depth has encoding TYPE_16UC1
     cv_bridge::CvImageConstPtr depth_ptr;
     // debug use     std::cout<<depth_msg->encoding<<std::endl;
+    if (depth_msg->encoding == "16UC1")
     {
         sensor_msgs::Image img;
         img.header = depth_msg->header;
@@ -109,14 +110,22 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
         img.is_bigendian = depth_msg->is_bigendian;
         img.step = depth_msg->step;
         img.data = depth_msg->data;
-        img.encoding = sensor_msgs::image_encodings::MONO16;
+        img.encoding = "mono16"; // sensor_msgs::image_encodings::MONO16;
         depth_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO16);
-    }
+    }else
+        depth_ptr = cv_bridge::toCvCopy(depth_msg, sensor_msgs::image_encodings::MONO16);
 
 
     cv::Mat show_img = ret_img; //ptr->image;
     TicToc t_r;
+    cv::Mat dep_img = depth_ptr->image.clone(); 
+
     // init pts here, using readImage()
+    ROS_INFO("depth_image size: width: %d height: %d", dep_img.cols, dep_img.rows);
+    // cv::imshow("dep", dep_img);
+    // cv::waitKey(5);
+    float x_scale = ret_img.cols / dep_img.cols; 
+    float y_scale = ret_img.rows / dep_img.rows; 
 
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
@@ -125,7 +134,8 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
         {
 
             // trackerData[i].readImage(ptr->image.rowRange(ROW * i, ROW * (i + 1)), depth_ptr->image.rowRange(ROW * i, ROW * (i + 1)), color_msg->header.stamp.toSec());
-            trackerData[i].readImage(ret_img, depth_ptr->image.rowRange(ROW * i, ROW * (i + 1)), color_msg->header.stamp.toSec()); 
+            // trackerData[i].readImage(ret_img, depth_ptr->image.rowRange(ROW * i, ROW * (i + 1)), color_msg->header.stamp.toSec()); 
+            trackerData[i].readImage(ret_img, dep_img, color_msg->header.stamp.toSec()); 
         }
         else
         {
@@ -138,7 +148,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
             else
             {
                 trackerData[i].cur_img = ret_img; //ptr->image.rowRange(ROW * i, ROW * (i + 1));
-                trackerData[i].cur_depth = depth_ptr->image.rowRange(ROW * i, ROW * (i + 1));
+                trackerData[i].cur_depth = dep_img; // depth_ptr->image.rowRange(ROW * i, ROW * (i + 1));
             }
 
         }
@@ -161,7 +171,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
     if (PUB_THIS_FRAME)
     {
         // vector<int> test;
-        cv::Mat show_depth = depth_ptr->image;
+        cv::Mat show_depth = dep_img; // depth_ptr->image;
         pub_count++;
         //http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud.html
         sensor_msgs::PointCloudPtr feature_points(new sensor_msgs::PointCloud);
@@ -205,7 +215,9 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
 
                     //nearest neighbor....fastest  may be changed
                     // show_depth: 480*640   y:[0,480]   x:[0,640]
-                    depth_of_point.values.push_back((int)show_depth.at<unsigned short>(round(cur_pts[j].y), round(cur_pts[j].x)));
+
+                    
+                    depth_of_point.values.push_back((int)show_depth.at<unsigned short>(round(cur_pts[j].y/y_scale), round(cur_pts[j].x/x_scale)));
                     // depth_of_point.values.push_back(0.001*show_depth.at<unsigned short>(round(cur_pts[j].y), round(cur_pts[j].x)));
                     //debug use: print depth pixels
                    //  test.push_back((int)show_depth.at<unsigned short>(round(cur_pts[j].y),round(cur_pts[j].x)));
@@ -243,7 +255,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
 
             for (int i = 0; i < NUM_OF_CAM; i++)
             {
-                cv::Mat tmp_img = stereo_img.rowRange(i * ROW, (i + 1) * ROW);
+                cv::Mat tmp_img = stereo_img; // stereo_img.rowRange(i * ROW, (i + 1) * ROW);
                 cv::cvtColor(show_img, tmp_img, CV_GRAY2RGB);//??seems useless?
 
                 for (unsigned int j = 0; j < trackerData[i].cur_pts.size(); j++)
@@ -266,8 +278,8 @@ void img_callback(const sensor_msgs::ImageConstPtr &color_msg, const sensor_msgs
                     //cv::putText(tmp_img, name, trackerData[i].cur_pts[j], cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
                 }
             }
-            //cv::imshow("vis", stereo_img);
-            //cv::waitKey(5);
+            // cv::imshow("vis", stereo_img);
+            // cv::waitKey(5);
             pub_match.publish(ptr->toImageMsg());
         }
     }
